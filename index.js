@@ -10,9 +10,7 @@ const CHANNEL_ID = process.env.CHANNEL_ID;
 const PORT = process.env.PORT || 3000;
 
 if (!TOKEN || !CHANNEL_ID) {
-  console.error(
-    "❌ ERROR: TOKEN atau CHANNEL_ID belum diisi di Secrets Replit!",
-  );
+  console.error("❌ ERROR: TOKEN atau CHANNEL_ID belum diisi di Secrets!");
   process.exit(1);
 }
 
@@ -20,21 +18,13 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-// ===== EVENT: BOT NYALA (STARTUP) =====
-client.once("ready", async () => {
+client.once("ready", () => {
   console.log(`✅ Bot Online: ${client.user.tag}`);
-  try {
-    const channel = await client.channels.fetch(CHANNEL_ID);
-    // Pesan ini langsung terkirim begitu kamu jalankan bot
-    await channel.send("Pengumuman Penambahan Fitur Baru Website Cavallery. ");
-    console.log("🚀 Pesan startup berhasil dikirim ke Discord.");
-  } catch (err) {
-    console.error("❌ Gagal mengirim pesan startup:", err);
-  }
 });
 
-// ===== ROUTE: TERIMA DATA DARI WORDPRESS =====
+// ROUTE UTAMA
 app.post("/send", async (req, res) => {
+  // Pastikan mengambil 'url' dari body
   const { title, message, url } = req.body;
 
   if (!message) {
@@ -44,29 +34,35 @@ app.post("/send", async (req, res) => {
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
 
+    // 1. Kirim Pesan Teks Pengumuman (Sesuai Request)
+    await channel.send("Pengumuman Penambahan Fitur Baru Website Cavallery.");
+
+    // 2. Kirim Kotak Embed dengan Link Aktif
     const embed = new EmbedBuilder()
       .setTitle(title || "Update Baru")
+      .setURL(url && url.startsWith("http") ? url : null) // VALIDASI URL
       .setDescription(message)
-      .setURL(url || null) // Membuat judul biru & bisa diklik ke website
-      .setColor(0x5865f2)
+      .setColor(0x5865f2) // Warna Biru Discord
       .setTimestamp()
-      .setFooter({ text: "Cavallery Website System" });
+      .setFooter({ text: "Cavallery System Notification" });
 
-    // Tambahan field agar link terlihat jelas di HP
+    // Tambahkan field link manual agar lebih terlihat di Mobile
     if (url) {
       embed.addFields({
-        name: "🔗 Link Preview",
+        name: "🔗 Website Link",
         value: `[Klik di sini untuk melihat](${url})`,
       });
     }
 
     await channel.send({ embeds: [embed] });
+
+    console.log("🚀 Notifikasi Terkirim!");
     res.json({ status: "berhasil" });
   } catch (err) {
-    console.error("❌ Error kirim Discord:", err);
+    console.error("❌ Gagal:", err);
     res.status(500).json({ status: "error", detail: err.message });
   }
 });
 
-app.listen(PORT, () => console.log(`📡 Server Bridge aktif di port ${PORT}`));
+app.listen(PORT, () => console.log(`📡 Bridge Aktif di Port ${PORT}`));
 client.login(TOKEN);
