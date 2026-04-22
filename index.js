@@ -1,21 +1,20 @@
 require("dotenv").config();
-
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const express = require("express");
 
 const app = express();
-
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // ===== CONFIG =====
-const TOKEN = process.env.TOKEN; //
+const TOKEN = process.env.TOKEN;
 const CHANNEL_ID = process.env.CHANNEL_ID;
-const PORT = process.env.PORT || 9999;
+const PORT = process.env.PORT || 3000;
 
-// ===== CEK ENV =====
+// ===== VALIDASI ENV =====
 if (!TOKEN || !CHANNEL_ID) {
-  console.error("TOKEN atau CHANNEL_ID belum diisi di .env");
+  console.error(
+    "❌ ERROR: TOKEN atau CHANNEL_ID belum diisi di Secrets Replit!",
+  );
   process.exit(1);
 }
 
@@ -24,51 +23,48 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-// ===== BOT READY =====
-client.once("ready", async () => {
-  console.log(`Bot aktif sebagai ${client.user.tag}`);
-
-  const channel = await client.channels.fetch(CHANNEL_ID);
-  console.log("Channel ketemu:", channel.name);
-
-  await channel.send("Bot Passion Erine Sudah Aktif. ");
+client.once("ready", () => {
+  console.log(`✅ Bot Online sebagai: ${client.user.tag}`);
 });
 
-// ===== TEST ROUTE =====
-app.get("/test", async (req, res) => {
-  const channel = await client.channels.fetch(CHANNEL_ID);
-  await channel.send("TEST DARI SERVER");
-
-  res.send("OK BERHASIL");
-});
-
-// ===== SEND MESSAGE =====
+// ===== ROUTE: SEND UPDATE DARI WORDPRESS =====
 app.post("/send", async (req, res) => {
-  const message = req.body?.message;
+  // Mengambil data terpisah dari payload WordPress
+  const { title, message, url } = req.body;
 
   if (!message) {
-    return res.json({ status: "error", detail: "message kosong" });
+    return res
+      .status(400)
+      .json({ status: "error", detail: "Data pesan kosong" });
   }
 
-  const channel = await client.channels.fetch(CHANNEL_ID);
+  try {
+    const channel = await client.channels.fetch(CHANNEL_ID);
 
-  await channel.send({
-    embeds: [
-      {
-        title: "Notifikasi",
-        description: message,
-        color: 5814783,
-      },
-    ],
-  });
+    // Membuat Embed agar link website (URL) bisa diklik di judul
+    const embed = new EmbedBuilder()
+      .setTitle(title || "Update Cavallery")
+      .setDescription(message)
+      .setURL(url || null) // Ini yang membuat judul biru dan bisa diklik
+      .setColor(0x5865f2) // Warna Biru Discord
+      .setTimestamp()
+      .setFooter({ text: "Cavallery System Notification" });
 
-  res.json({ status: "berhasil" });
+    await channel.send({ embeds: [embed] });
+
+    console.log("🚀 Notifikasi terkirim ke Discord!");
+    res.json({ status: "berhasil" });
+  } catch (err) {
+    console.error("❌ Gagal kirim ke Discord:", err);
+    res.status(500).json({ status: "error", detail: err.message });
+  }
 });
 
-// ===== START SERVER =====
+// Route Test untuk memastikan server jalan
+app.get("/test", (req, res) => res.send("Bot Bridge is Active!"));
+
 app.listen(PORT, () => {
-  console.log(`API jalan di http://127.0.0.1:${PORT}`);
+  console.log(`📡 API Bridge berjalan di port ${PORT}`);
 });
 
-// ===== LOGIN BOT =====
 client.login(TOKEN);
