@@ -22,9 +22,8 @@ client.once("ready", () => {
   console.log(`✅ Bot Online: ${client.user.tag}`);
 });
 
-// ROUTE UTAMA
+// ROUTE PENERIMA DATA
 app.post("/send", async (req, res) => {
-  // Pastikan mengambil 'url' dari body
   const { title, message, url } = req.body;
 
   if (!message) {
@@ -34,29 +33,29 @@ app.post("/send", async (req, res) => {
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
 
-    // 1. Kirim Pesan Teks Pengumuman (Sesuai Request)
+    // 1. Pesan Teks Pembuka (Wajib)
     await channel.send("Pengumuman Penambahan Fitur Baru Website Cavallery.");
 
-    // 2. Kirim Kotak Embed dengan Link Aktif
+    // 2. Kotak Embed dengan Judul yang Bisa Diklik
     const embed = new EmbedBuilder()
       .setTitle(title || "Update Baru")
-      .setURL(url && url.startsWith("http") ? url : null) // VALIDASI URL
+      .setURL(url && url.startsWith("http") ? url : null) // Link Aktif
       .setDescription(message)
-      .setColor(0x5865f2) // Warna Biru Discord
+      .setColor(0x5865f2)
       .setTimestamp()
       .setFooter({ text: "Cavallery System Notification" });
 
-    // Tambahkan field link manual agar lebih terlihat di Mobile
+    // Tambahkan field link manual agar lebih jelas di Mobile
     if (url) {
       embed.addFields({
         name: "🔗 Website Link",
-        value: `[Klik di sini untuk melihat](${url})`,
+        value: `[Klik di sini untuk membuka](${url})`,
       });
     }
 
     await channel.send({ embeds: [embed] });
 
-    console.log("🚀 Notifikasi Terkirim!");
+    console.log("🚀 Berhasil kirim ke Discord!");
     res.json({ status: "berhasil" });
   } catch (err) {
     console.error("❌ Gagal:", err);
@@ -64,5 +63,6 @@ app.post("/send", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`📡 Bridge Aktif di Port ${PORT}`));
+app.get("/test", (req, res) => res.send("Bridge Active!"));
+app.listen(PORT, () => console.log(`📡 Server aktif di port ${PORT}`));
 client.login(TOKEN);
