@@ -29,7 +29,6 @@ client.once("ready", () => {
 
 // ===== ROUTE: SEND UPDATE DARI WORDPRESS =====
 app.post("/send", async (req, res) => {
-  // Mengambil data terpisah dari payload WordPress
   const { title, message, url } = req.body;
 
   if (!message) {
@@ -41,18 +40,29 @@ app.post("/send", async (req, res) => {
   try {
     const channel = await client.channels.fetch(CHANNEL_ID);
 
-    // Membuat Embed agar link website (URL) bisa diklik di judul
+    // 1. Kirim pesan teks pengumuman sesuai permintaanmu
+    await channel.send("Pengumuman Penambahan Fitur Baru Website Cavallery. ");
+
+    // 2. Kirim kotak detail (Embed) dengan link website
     const embed = new EmbedBuilder()
-      .setTitle(title || "Update Cavallery")
+      .setTitle(title || "Update Baru")
       .setDescription(message)
-      .setURL(url || null) // Ini yang membuat judul biru dan bisa diklik
-      .setColor(0x5865f2) // Warna Biru Discord
+      .setURL(url || null) // Membuat judul bisa diklik menuju URL dari form
+      .setColor(0x5865f2)
       .setTimestamp()
       .setFooter({ text: "Cavallery System Notification" });
 
+    // Tambahkan field link manual jika URL ada (agar lebih jelas)
+    if (url) {
+      embed.addFields({
+        name: "🔗 Link Website",
+        value: `[Klik di sini untuk membuka](${url})`,
+      });
+    }
+
     await channel.send({ embeds: [embed] });
 
-    console.log("🚀 Notifikasi terkirim ke Discord!");
+    console.log("🚀 Pengumuman & Embed terkirim!");
     res.json({ status: "berhasil" });
   } catch (err) {
     console.error("❌ Gagal kirim ke Discord:", err);
@@ -60,7 +70,6 @@ app.post("/send", async (req, res) => {
   }
 });
 
-// Route Test untuk memastikan server jalan
 app.get("/test", (req, res) => res.send("Bot Bridge is Active!"));
 
 app.listen(PORT, () => {
